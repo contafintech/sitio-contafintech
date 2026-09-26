@@ -1,0 +1,57 @@
+<script>
+  var MODULOS = ['CRM', 'Ventas', 'Productos', 'Inventario', 'Servicios', 'Marketing', 'Finanzas'];
+  var HOJAS_POR_MODULO = {
+    CRM: ['Clientes', 'Leads'], Ventas: ['Pedidos', 'Cotizaciones', 'Contratos', 'Preventas'],
+    Productos: ['Productos', 'Categorias'], Inventario: ['Inventario', 'MovimientosInventario'],
+    Servicios: ['Servicios', 'Reservas'], Marketing: ['Campanas'], Finanzas: ['MovimientosFin', 'Cuentas']
+  };
+
+  function irAModulo(modulo) {
+    document.querySelectorAll('.barra-lateral nav a').forEach(function (a) { a.classList.toggle('activo', a.dataset.modulo === modulo); });
+    var principal = document.getElementById('panel-principal');
+    principal.innerHTML = '<div class="cabecera-modulo"><h2>' + modulo + '</h2></div><div class="cargando">Cargando…</div>';
+
+    google.script.run
+      .withSuccessHandler(function (kpis) { pintarModulo_(modulo, kpis); })
+      .withFailureHandler(function (err) { principal.innerHTML = '<div class="error-carga">' + err.message + '</div>'; })
+      .dashKpis(modulo);
+  }
+
+  function pintarModulo_(modulo, kpis) {
+    var principal = document.getElementById('panel-principal');
+    var kpisHtml = (kpis || []).map(function (k) {
+      return '<div class="kpi"><div class="valor">' + (k.valor === null ? '—' : k.valor) + '</div><div class="nombre">' + k.nombre + '</div></div>';
+    }).join('') || '<p style="color:#94a3b8">Sin KPI validados para este módulo todavía (revisa KPI_Definiciones en el Sheet).</p>';
+
+    var tablasHtml = (HOJAS_POR_MODULO[modulo] || []).map(function (hoja) {
+      return '<h3 style="margin-top:28px">' + hoja + '</h3><div id="tabla-' + hoja + '" class="cargando">Cargando…</div>';
+    }).join('');
+
+    principal.innerHTML =
+      '<div class="cabecera-modulo"><h2>' + modulo + '</h2></div>' +
+      '<div class="grid-kpis">' + kpisHtml + '</div>' + tablasHtml;
+
+    (HOJAS_POR_MODULO[modulo] || []).forEach(function (hoja) { cargarTabla_(hoja); });
+  }
+
+  function cargarTabla_(hoja) {
+    google.script.run
+      .withSuccessHandler(function (filas) { pintarTabla_(hoja, filas); })
+      .withFailureHandler(function (err) { document.getElementById('tabla-' + hoja).innerHTML = '<div class="error-carga">' + err.message + '</div>'; })
+      .dashListar(hoja, {});
+  }
+
+  function pintarTabla_(hoja, filas) {
+    var cont = document.getElementById('tabla-' + hoja);
+    if (!filas || !filas.length) { cont.innerHTML = '<p style="color:#94a3b8">Sin registros todavía.</p>'; return; }
+    var columnas = Object.keys(filas[0]).filter(function (c) { return ['creado_en', 'actualizado_en', 'creado_por', 'actualizado_por'].indexOf(c) === -1; }).slice(0, 8);
+    var encabezado = '<tr>' + columnas.map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr>';
+    var cuerpo = filas.slice(0, 50).map(function (f) {
+      return '<tr>' + columnas.map(function (c) { return '<td>' + (f[c] === undefined || f[c] === null ? '' : f[c]) + '</td>'; }).join('') + '</tr>';
+    }).join('');
+    cont.innerHTML = '<table class="datos"><thead>' + encabezado + '</thead><tbody>' + cuerpo + '</tbody></table>' +
+      (filas.length > 50 ? '<p style="color:#94a3b8; font-size:.85rem">Mostrando 50 de ' + filas.length + ' registros.</p>' : '');
+  }
+
+  document.addEventListener('DOMContentLoaded', function () { irAModulo(MODULOS[0]); });
+</script>

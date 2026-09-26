@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de administración</title>
+  <?!= incluir('Dashboard_Css'); ?>
+</head>
+<body>
+  <div class="app">
+    <aside class="barra-lateral">
+      <h1>⚙ Panel</h1>
+      <nav>
+        <a data-modulo="CRM" onclick="irAModulo('CRM')">CRM</a>
+        <a data-modulo="Ventas" onclick="irAModulo('Ventas')">Ventas</a>
+        <a data-modulo="Productos" onclick="irAModulo('Productos')">Productos</a>
+        <a data-modulo="Inventario" onclick="irAModulo('Inventario')">Inventario</a>
+        <a data-modulo="Servicios" onclick="irAModulo('Servicios')">Servicios</a>
+        <a data-modulo="Marketing" onclick="irAModulo('Marketing')">Marketing</a>
+        <a data-modulo="Finanzas" onclick="irAModulo('Finanzas')">Finanzas</a>
+      </nav>
+    </aside>
+    <main class="principal">
+      <p class="usuario-actual">Conectado como <?= usuario.email ?> (<?= usuario.rol ?>)</p>
+      <div id="panel-principal"><div class="cargando">Cargando…</div></div>
+    </main>
+  </div>
+  <?!= incluir('Dashboard_Js'); ?>
+</body>
+</html>
